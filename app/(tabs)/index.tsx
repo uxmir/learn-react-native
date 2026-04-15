@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ImageBackground } from "react-native";
 import React, {  ReactNode } from "react";
 
 interface items {
@@ -62,6 +62,19 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
     color: "white",
   },
+  image_container:{
+    width:200,
+    height:200,
+    borderRadius:16,
+    marginBottom:12
+  },
+  image:{
+    width:'100%',
+    height:'100%',
+    resizeMode:'cover',
+    borderWidth:1,
+    borderColor:'red'
+  }
 });
 export default index;
 
