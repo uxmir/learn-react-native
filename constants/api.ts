@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
-  baseURL: process.env.BLOG_API,
+  baseURL:process.env.EXPO_PUBLIC_BLOG_API,
   headers: {
     "Content-Type": "application/json",
   },
