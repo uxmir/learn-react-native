@@ -1,66 +1,184 @@
-
-import { createAsyncThunk, createSlice,PayloadAction } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
-
-interface authProvider{
- name:string | null,   
- email:string | null,   
- password:string | null,
- answer:string | null
+interface userProfile {
+  _id: string;
+  name: string;
+  email: string;
+  answer: string;
 }
 
-interface auth{
-    user:authProvider[],
-    error:null,
-    loading:boolean
+interface authState {
+  user: userProfile | null;
+  token: string | null;
+  error: string | null;
+  loading: boolean;
 }
 
-const initialState:auth={
-user:[],
-error:null,
-loading:false
-}
+const initialState: authState = {
+  user: null,
+  token: null,
+  error: null,
+  loading: false,
+};
 
-export const register=createAsyncThunk<auth>(
- "auth/register" ,
- async(form,{rejectWithValue})=>{
-try {
-   const response=await axios.post(`${process.env.EXPO_PUBLIC_BLOG_API}/api/v1/auth/register`,form)
- return response  
-} catch (error) {
-    return rejectWithValue(error)
-}
- }  
-)
-const authSlice=createSlice({
-name:"auth",
-initialState,
-reducers:{
-if(action.payload){
- async()=>{
-    await SecureStore.getItemAsync("token")
- }else{
-    await SecureStore.deleteItemAsync("token")
- }
-}
-},
-extraReducers:(builder)=>{
-builder.
-addCase(register.pending,(state)=>{
- state.loading=true,
- state.error=null   
-})
-}
-.addCase(register.fulfilled,(state,action)=>{
-    state.user=action.payload,
-    state.error=null
-})
-.addCase(register.rejected,(state)=>{
-    state.loading=false,
-    state.error=err.message
-})
-})
+//api logic
+export const register = createAsyncThunk(
+  "auth/register",
+  async (formData: any, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BLOG_URL}/api/v1/auth/register`,
+        formData,
+      );
+      if (response?.data?.success && response?.data?.token) {
+        await SecureStore.setItemAsync("token", response?.data?.token);
+      }
+      return response?.data;
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message;
+      return rejectWithValue(message);
+    }
+  },
+);
+export const login = createAsyncThunk(
+  "auth/login",
+  async (formData: any, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BLOG_URL}/api/v1/auth/login`,
+        formData,
+      );
+      if (response?.data?.success && response?.data?.token) {
+        await SecureStore.setItemAsync("token", response?.data?.token);
+      }
+      return response?.data;
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message;
+      return rejectWithValue(message);
+    }
+  },
+);
 
-export default authSlice.reducer
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (password: any, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BLOG_URL}/api/v1/auth/reset-password`,
+        password,
+      );
+      return response?.data;
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message;
+      return rejectWithValue(message);
+    }
+  },
+);
+
+export const updatePassword = createAsyncThunk(
+  "auth/updatePassword",
+  async (password: any, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BLOG_URL}/api/v1/auth/update-password`,
+        password,
+      );
+      return response?.data;
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message;
+      return rejectWithValue(message);
+    }
+  },
+);
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+      SecureStore.deleteItemAsync("token");
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(register.pending, (state: any) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+        state.token = null;
+      })
+      .addCase(register.fulfilled, (state: any, action: PayloadAction<any>) => {
+        state.user = action.payload?.user;
+        state.token = action.payload?.token;
+        state.error = null;
+      })
+      .addCase(register.rejected, (state: any, action: PayloadAction<any>) => {
+        state.user = null;
+        state.token = null;
+        state.error = action.payload as string;
+      })
+      //login
+      .addCase(login.pending, (state: any) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+        state.token = null;
+      })
+      .addCase(login.fulfilled, (state: any, action: PayloadAction<any>) => {
+        state.user = action.payload?.user;
+        state.token = action.payload?.token;
+        state.error = null;
+      })
+      .addCase(login.rejected, (state: any, action: PayloadAction<any>) => {
+        state.user = null;
+        state.token = null;
+        state.error = action.payload as string;
+      })
+      //reset-password
+      .addCase(resetPassword.pending, (state: any) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(
+        resetPassword.fulfilled,
+        (state: any, action: PayloadAction<any>) => {
+          state.user = action.payload?.user;
+          state.error = null;
+        },
+      )
+      .addCase(
+        resetPassword.rejected,
+        (state: any, action: PayloadAction<any>) => {
+          state.user = null;
+          state.error = action.payload as string;
+        },
+      )
+      //update-password
+      .addCase(updatePassword.pending, (state: any) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(
+        updatePassword.fulfilled,
+        (state: any, action: PayloadAction<any>) => {
+          state.user = action.payload?.user;
+          state.error = null;
+        },
+      )
+      .addCase(
+        updatePassword.rejected,
+        (state: any, action: PayloadAction<any>) => {
+          state.user = null;
+          state.error = action.payload as string;
+        },
+      );
+  },
+});
+
+export const { logout } = authSlice.actions;
+export default authSlice.reducer;
