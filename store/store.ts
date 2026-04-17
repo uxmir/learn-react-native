@@ -7,6 +7,6 @@ export const store = configureStore({
     blog:blogReducer
   },
 });
-
 export type RootState = ReturnType<typeof store.getState>;
 export type appDispatch = typeof store.dispatch;
+ 

@@ -6,14 +6,32 @@ interface blogData {
   text: string;
 }
 
+interface commentData {
+  _id: string | null;
+  user: string | null;
+  blog: string | null;
+  comment: string | null;
+  createdAt:string
+}
+
 interface blogState {
-  blog: blogData | null;
+  allBlogs: blogData[];
+  singleBlog: blogData | null;
+  totalBlogs: number;
+  currentPage: number;
+  totalPage: number;
+  allComments: commentData[];
   error: string | null;
   loading: boolean;
 }
 
 const initialState: blogState = {
-  blog: null,
+  allBlogs: [],
+  singleBlog: null,
+  totalBlogs: 0,
+  currentPage: 1,
+  totalPage: 1,
+  allComments: [],
   error: null,
   loading: false,
 };
@@ -33,75 +51,82 @@ export const createBlog = createAsyncThunk(
   },
 );
 //get all
-export const getAllBlog=createAsyncThunk(
-    "blog/getAll",
-  async(params:{keyword?:string,page?:number,perPage?:number}|null,{rejectWithValue})=>{
+export const getAllBlog = createAsyncThunk(
+  "blog/getAll",
+  async (
+    params: { keyword?: string; page?: number; perPage?: number } | null,
+    { rejectWithValue },
+  ) => {
     try {
-     const response =await api.get('/api/v2/blog/getdataall',{params:params||undefined})
-     return response?.data;
-    } catch (error:any) {
+      const response = await api.get("/api/v2/blog/getdataall", {
+        params: params || undefined,
+      });
+      return response?.data;
+    } catch (error: any) {
       const message = error?.response?.data.message || error?.message;
-      return rejectWithValue(message);  
+      return rejectWithValue(message);
     }
-  }
-)
+  },
+);
 //get single
-export const getSingle=createAsyncThunk(
-    "blog/getSingle",
-      async(id:number,{rejectWithValue})=>{
+export const getSingle = createAsyncThunk(
+  "blog/getSingle",
+  async (id: number, { rejectWithValue }) => {
     try {
-     const response =await api.get(`/api/v2/blog/data/${id}`)
-     return response?.data;
-    } catch (error:any) {
+      const response = await api.get(`/api/v2/blog/data/${id}`);
+      return response?.data;
+    } catch (error: any) {
       const message = error?.response?.data.message || error?.message;
-      return rejectWithValue(message);  
+      return rejectWithValue(message);
     }
-}
-)
-
+  },
+);
 //updateSingle
-export const updateBlog=createAsyncThunk(
-    "blog/updateSingle",
-      async(payload:any,id:number,{rejectWithValue})=>{
+export const updateBlog = createAsyncThunk(
+  "blog/updateSingle",
+  async (
+    { id, payload }: { id: number; payload: any },
+    { rejectWithValue },
+  ) => {
     try {
-     const response =await api.put(`/api/v2/blog/update/${id}`,payload)
-     return response?.data;
-    } catch (error:any) {
+      const response = await api.put(`/api/v2/blog/update/${id}`, payload);
+      return response?.data;
+    } catch (error: any) {
       const message = error?.response?.data.message || error?.message;
-      return rejectWithValue(message);  
+      return rejectWithValue(message);
     }
-}
-)
+  },
+);
 
-export const deleteBlog=createAsyncThunk(
-    "blog/delete",
-      async(id:number,{rejectWithValue})=>{
+export const deleteBlog = createAsyncThunk(
+  "blog/delete",
+  async (id: number, { rejectWithValue }) => {
     try {
-     const response =await api.delete(`/api/v2/blog/delete/${id}`)
-     return response?.data;
-    } catch (error:any) {
+      const response = await api.delete(`/api/v2/blog/delete/${id}`);
+      return response?.data;
+    } catch (error: any) {
       const message = error?.response?.data.message || error?.message;
-      return rejectWithValue(message);  
+      return rejectWithValue(message);
     }
-}
-)
+  },
+);
 const blogSlice = createSlice({
   name: "blog",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-    //createblog
+      //createblog
       .addCase(createBlog.pending, (state: any) => {
         state.loading = true;
-        state.blog = null;
+        state.allBlogs = [];
         state.error = null;
       })
       .addCase(
         createBlog.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = action.payload?.blog;
+          state.allBlogs = [action.payload?.createBlog, ...state.allBlogs];
           state.error = null;
         },
       )
@@ -109,21 +134,26 @@ const blogSlice = createSlice({
         createBlog.rejected,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = null;
+          state.allBlogs = [];
           state.error = action.payload as string;
         },
       )
-          //getAllblog
+      //getAllblog
       .addCase(getAllBlog.pending, (state: any) => {
         state.loading = true;
-        state.blog = null;
+        state.allBlogs = [];
+        state.currentPage = 1;
+        state.totalPage = 1;
+        state.totalBlogs = 0;
         state.error = null;
       })
       .addCase(
         getAllBlog.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = action.payload?.blog;
+          state.allBlogs = action.payload?.allBlogs;
+          state.currentPage = action.payload?.currentPage;
+          state.totalPage = action.payload?.totalPages;
           state.error = null;
         },
       )
@@ -131,43 +161,50 @@ const blogSlice = createSlice({
         getAllBlog.rejected,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = null;
+          state.allBlogs = [];
+          state.currentPage = 1;
+          state.totalPage = 1;
+          state.totalBlogs = 0;
           state.error = action.payload as string;
         },
       )
-     //getsingleblog
+      //getsingleblog
       .addCase(getSingle.pending, (state: any) => {
         state.loading = true;
-        state.blog = null;
+        state.singleBlog = null;
+        state.allComments = [];
         state.error = null;
       })
       .addCase(
         getSingle.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = action.payload?.blog;
+          state.singleBlog = action.payload?.singleBlog;
+          state.allComments = action.payload?.allComments;
           state.error = null;
         },
       )
-      .addCase(
-        getSingle.rejected,
-        (state: any, action: PayloadAction<any>) => {
-          state.loading = false;
-          state.blog = null;
-          state.error = action.payload as string;
-        },
-      )
+      .addCase(getSingle.rejected, (state: any, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.singleBlog = action.payload?.singleBlog;
+        state.allComments = action.payload?.allComments;
+        state.error = action.payload as string;
+      })
       //updatesingleblog
       .addCase(updateBlog.pending, (state: any) => {
         state.loading = true;
-        state.blog = null;
+        state.allBlogs = [];
+        state.singleBlog = null;
         state.error = null;
       })
       .addCase(
         updateBlog.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = action.payload?.blog;
+          state.allBlogs = state.allBlogs?.map((blog: any) =>
+           blog._id === action.payload?.updateBlog?._id ? action.payload?.updateBlog : blog,
+          );
+          state.singleBlog = action.payload?.updateBlog;
           state.error = null;
         },
       )
@@ -175,21 +212,26 @@ const blogSlice = createSlice({
         updateBlog.rejected,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = null;
+          state.allBlogs = [];
+          state.singleBlog = null;
           state.error = action.payload as string;
         },
       )
       //delete
       .addCase(deleteBlog.pending, (state: any) => {
         state.loading = true;
-        state.blog = null;
+        state.allBlogs = [];
+        state.singleBlog = null;
         state.error = null;
       })
       .addCase(
         deleteBlog.fulfilled,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = action.payload?.blog;
+          state.allBlogs = state.allBlogs?.filter(
+            (blog: any) => blog._id !== action.payload?.deleteBlog?._id,
+          );
+          state.singleBlog = null;
           state.error = null;
         },
       )
@@ -197,7 +239,8 @@ const blogSlice = createSlice({
         deleteBlog.rejected,
         (state: any, action: PayloadAction<any>) => {
           state.loading = false;
-          state.blog = null;
+          state.allBlogs = [];
+          state.singleBlog = null;
           state.error = action.payload as string;
         },
       );
