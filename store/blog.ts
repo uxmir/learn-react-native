@@ -1,11 +1,13 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import api from "../constants/api";
 interface blogData {
-  _id: string;
-  title: string;
-  text: string;
+  _id: string | null;
+  user:string | null
+  image:string | null
+  title: string | null;
+  text: string | null;
+  createdAt:string | null
 }
-
 interface commentData {
   _id: string | null;
   user: string | null;
